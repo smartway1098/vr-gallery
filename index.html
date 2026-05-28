@@ -6,19 +6,84 @@
     <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v7.5.0/dist/aframe-extras.min.js"></script>
     <script>
+      AFRAME.registerComponent('chinese-text-board', {
+        schema: {
+          title: {type: 'string', default: '凤凰 (Phoenix)'},
+          desc: {type: 'string', default: '凤凰，中国神话中的百鸟之王。\n雄者为凤，雌者为凰。\n自古以来象征着吉祥和谐、\n至高无上的高贵，以及涅槃重生。'}
+        },
+        init: function () {
+          const canvas = document.createElement('canvas');
+          canvas.width = 512;
+          canvas.height = 340;
+          const ctx = canvas.getContext('2d');
+          
+          // White background
+          ctx.fillStyle = '#FFFFFF';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          
+          // Golden borders
+          ctx.strokeStyle = '#FFD700';
+          ctx.lineWidth = 12;
+          ctx.strokeRect(6, 6, canvas.width - 12, canvas.height - 12);
+          
+          // Inner thin border
+          ctx.strokeStyle = '#333333';
+          ctx.lineWidth = 2;
+          ctx.strokeRect(18, 18, canvas.width - 36, canvas.height - 36);
+
+          // Title
+          ctx.fillStyle = '#111111';
+          ctx.font = 'bold 32px "Microsoft YaHei", sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(this.data.title, canvas.width / 2, 70);
+          
+          // Separator line
+          ctx.beginPath();
+          ctx.moveTo(40, 95);
+          ctx.lineTo(canvas.width - 40, 95);
+          ctx.strokeStyle = '#FFD700';
+          ctx.lineWidth = 3;
+          ctx.stroke();
+          
+          // Description (multiline text support)
+          ctx.fillStyle = '#222222';
+          ctx.font = '20px "Microsoft YaHei", sans-serif';
+          ctx.textAlign = 'left';
+          
+          const lines = this.data.desc.split('\n');
+          let y = 145;
+          lines.forEach(line => {
+            ctx.fillText(line, 45, y);
+            y += 36;
+          });
+          
+          // Interactive Hint
+          ctx.fillStyle = '#FF5555';
+          ctx.font = 'bold 16px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText('（点击说明牌 放大 / 缩小）', canvas.width / 2, canvas.height - 35);
+
+          // Render canvas to A-Frame material
+          this.el.setAttribute('material', {
+            src: canvas,
+            shader: 'flat'
+          });
+        }
+      });
+
       AFRAME.registerComponent('click-interactive', {
         init: function () {
           this.el.addEventListener('click', () => {
-            const isZoomed = this.el.getAttribute('scale').x > 0.02;
+            const isZoomed = this.el.getAttribute('scale').x > 1.5;
             this.el.setAttribute('animation', {
               property: 'scale',
-              to: isZoomed ? '0.005 0.005 0.005' : '0.05 0.05 0.05',
-              dur: 1000
+              to: isZoomed ? '1 1 1' : '2.0 2.0 2.0',
+              dur: 800
             });
             this.el.setAttribute('animation__pos', {
               property: 'position',
-              to: isZoomed ? '0 0.75 0' : '0 1.6 -1',
-              dur: 1000
+              to: isZoomed ? '0 0.3 1.0' : '0 1.4 2.5',
+              dur: 800
             });
           });
         }
@@ -40,32 +105,78 @@
   <body>
     <div id="joystick-container"></div>
     <a-scene cursor="rayOrigin: mouse" raycaster="objects: [click-interactive]">
+      <!-- Assets -->
       <a-assets>
         <img id="floor" src="https://cdn.aframe.io/a-painter/images/floor.jpg">
         <a-asset-item id="phoenix" src="phoenix_bird.glb"></a-asset-item>
       </a-assets>
 
+      <!-- Camera / VR Controller -->
       <a-entity id="rig" movement-controls="controls: keyboard, gamepad, touch">
         <a-entity camera position="0 1.6 0" look-controls wasd-controls="fly: false">
           <a-cursor></a-cursor>
         </a-entity>
+        <a-entity oculus-touch-controls="hand: left"></a-entity>
+        <a-entity oculus-touch-controls="hand: right"></a-entity>
       </a-entity>
 
+      <!-- Floor (White) -->
       <a-plane color="#FFFFFF" rotation="-90 0 0" width="20" height="20"></a-plane>
+
+      <!-- Walls (Darker Gray) -->
       <a-box color="#808080" depth="0.2" height="6" width="20" position="0 3 -10"></a-box>
       <a-box color="#808080" depth="0.2" height="6" width="20" position="-10 3 0" rotation="0 90 0"></a-box>
       <a-box color="#808080" depth="0.2" height="6" width="20" position="10 3 0" rotation="0 90 0"></a-box>
       <a-box color="#808080" depth="0.2" height="6" width="20" position="0 3 10"></a-box>
+      
+      <!-- Ceiling -->
       <a-plane color="#505050" rotation="90 0 0" width="20" height="20" position="0 6 0"></a-plane>
 
+      <!-- Crystal Chandelier (Center Ceiling) -->
+      <a-entity position="0 5 0">
+        <a-sphere color="#FFF" radius="0.4" material="opacity: 0.6; transparent: true"></a-sphere>
+        <a-cone color="#FFF" radius-bottom="0.6" height="0.5" position="0 -0.4 0" material="opacity: 0.6; transparent: true"></a-cone>
+        <a-light type="point" color="#FFF" intensity="2" distance="15"></a-light>
+      </a-entity>
+      
+      <!-- Windows (Four per wall) -->
+      <!-- Front Wall -->
+      <a-box color="#ADD8E6" depth="0.1" height="2" width="2" position="-6 3 -9.9" opacity="0.6"></a-box>
+      <a-box color="#ADD8E6" depth="0.1" height="2" width="2" position="-2 3 -9.9" opacity="0.6"></a-box>
+      <a-box color="#ADD8E6" depth="0.1" height="2" width="2" position="2 3 -9.9" opacity="0.6"></a-box>
+      <a-box color="#ADD8E6" depth="0.1" height="2" width="2" position="6 3 -9.9" opacity="0.6"></a-box>
+
+      <!-- Back Wall -->
+      <a-box color="#ADD8E6" depth="0.1" height="2" width="2" position="-6 3 9.9" opacity="0.6"></a-box>
+      <a-box color="#ADD8E6" depth="0.1" height="2" width="2" position="-2 3 9.9" opacity="0.6"></a-box>
+      <a-box color="#ADD8E6" depth="0.1" height="2" width="2" position="2 3 9.9" opacity="0.6"></a-box>
+      <a-box color="#ADD8E6" depth="0.1" height="2" width="2" position="6 3 9.9" opacity="0.6"></a-box>
+
+      <!-- Pedestals (4 around the center) -->
       <a-entity position="-5 0 -5">
         <a-cylinder color="#FFD700" radius="0.4" height="1.5"></a-cylinder>
-        <a-gltf-model src="#phoenix" click-interactive position="0 0.75 0" scale="0.005 0.005 0.005" animation="property: rotation; to: 0 360 0; dur: 20000; loop: true; easing: linear"></a-gltf-model>
-        <a-plane color="#FFF" width="1.5" height="0.6" position="0 0.4 0.5" rotation="-20 0 0">
-          <a-text value="Phoenix Bird\n(Click to Interact)" color="#000" align="center" scale="0.5 0.5 0.5"></a-text>
-        </a-plane>
+        <a-gltf-model src="#phoenix" position="0 0.75 0" scale="0.005 0.005 0.005" animation="property: rotation; to: 0 360 0; dur: 20000; loop: true; easing: linear"></a-gltf-model>
+        
+        <!-- Info Sign (Interactive Canvas Board) - Moved forward to prevent clipping -->
+        <a-plane id="phoenix-info" chinese-text-board click-interactive width="1.5" height="1.0" position="0 0.3 1.0" rotation="-20 0 0" class="clickable"></a-plane>
       </a-entity>
 
+      <a-entity position="5 0 -5">
+        <a-cylinder color="#FFD700" radius="0.4" height="1.5"></a-cylinder>
+        <a-sphere color="#FFF" radius="0.3" position="0 1.8 0" animation="property: position; to: 0 2.2 0; dir: alternate; dur: 2000; loop: true"></a-sphere>
+      </a-entity>
+
+      <a-entity position="-5 0 5">
+        <a-cylinder color="#FFD700" radius="0.4" height="1.5"></a-cylinder>
+        <a-cone color="#FFF" radius-bottom="0.3" height="0.5" position="0 1.8 0"></a-cone>
+      </a-entity>
+
+      <a-entity position="5 0 5">
+        <a-cylinder color="#FFD700" radius="0.4" height="1.5"></a-cylinder>
+        <a-torus color="#FFF" radius="0.2" radius-tubular="0.05" position="0 1.8 0" rotation="90 0 0"></a-torus>
+      </a-entity>
+      
+      <!-- Sky and Ambient Lighting -->
       <a-sky color="#ECECEC"></a-sky>
       <a-light type="ambient" color="#FFF" intensity="0.5"></a-light>
     </a-scene>
