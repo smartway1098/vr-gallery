@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>VR Art Gallery</title>
+    <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v7.5.0/dist/aframe-extras.min.js"></script>
+    <style>
+      #joystick-container {
+        position: absolute;
+        bottom: 20px;
+        left: 20px;
+        width: 100px;
+        height: 100px;
+        background: rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        z-index: 999;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="joystick-container"></div>
+    <a-scene>
+      <!-- Assets -->
+      <a-assets>
+        <img id="floor" src="https://cdn.aframe.io/a-painter/images/floor.jpg">
+        <a-asset-item id="phoenix" src="phoenix_bird.glb"></a-asset-item>
+      </a-assets>
+
+      <!-- Camera / VR Controller -->
+      <a-entity id="rig" movement-controls="controls: keyboard, gamepad, touch">
+        <a-entity camera position="0 1.6 0" look-controls wasd-controls="fly: false"></a-entity>
+        <a-entity oculus-touch-controls="hand: left"></a-entity>
+        <a-entity oculus-touch-controls="hand: right"></a-entity>
+      </a-entity>
+
+      <!-- Floor (White) -->
+      <a-plane color="#FFFFFF" rotation="-90 0 0" width="20" height="20"></a-plane>
+
+      <!-- Walls (Darker Gray) -->
+      <a-box color="#808080" depth="0.2" height="6" width="20" position="0 3 -10"></a-box>
+      <a-box color="#808080" depth="0.2" height="6" width="20" position="-10 3 0" rotation="0 90 0"></a-box>
+      <a-box color="#808080" depth="0.2" height="6" width="20" position="10 3 0" rotation="0 90 0"></a-box>
+      <a-box color="#808080" depth="0.2" height="6" width="20" position="0 3 10"></a-box>
+      
+      <!-- Ceiling -->
+      <a-plane color="#505050" rotation="90 0 0" width="20" height="20" position="0 6 0"></a-plane>
+
+      <!-- Crystal Chandelier (Center Ceiling) -->
+      <a-entity position="0 5 0">
+        <a-sphere color="#FFF" radius="0.4" material="opacity: 0.6; transparent: true"></a-sphere>
+        <a-cone color="#FFF" radius-bottom="0.6" height="0.5" position="0 -0.4 0" material="opacity: 0.6; transparent: true"></a-cone>
+        <a-light type="point" color="#FFF" intensity="2" distance="15"></a-light>
+      </a-entity>
+      
+      <!-- Windows (Four per wall) -->
+      <!-- Front Wall -->
+      <a-box color="#ADD8E6" depth="0.1" height="2" width="2" position="-6 3 -9.9" opacity="0.6"></a-box>
+      <a-box color="#ADD8E6" depth="0.1" height="2" width="2" position="-2 3 -9.9" opacity="0.6"></a-box>
+      <a-box color="#ADD8E6" depth="0.1" height="2" width="2" position="2 3 -9.9" opacity="0.6"></a-box>
+      <a-box color="#ADD8E6" depth="0.1" height="2" width="2" position="6 3 -9.9" opacity="0.6"></a-box>
+
+      <!-- Back Wall -->
+      <a-box color="#ADD8E6" depth="0.1" height="2" width="2" position="-6 3 9.9" opacity="0.6"></a-box>
+      <a-box color="#ADD8E6" depth="0.1" height="2" width="2" position="-2 3 9.9" opacity="0.6"></a-box>
+      <a-box color="#ADD8E6" depth="0.1" height="2" width="2" position="2 3 9.9" opacity="0.6"></a-box>
+      <a-box color="#ADD8E6" depth="0.1" height="2" width="2" position="6 3 9.9" opacity="0.6"></a-box>
+
+      <!-- Pedestals (4 around the center) -->
+      <a-entity position="-5 0 -5">
+        <a-cylinder color="#FFD700" radius="0.4" height="1.5"></a-cylinder>
+        <a-gltf-model src="#phoenix" position="0 0.75 0" scale="0.005 0.005 0.005" animation="property: rotation; to: 0 360 0; dur: 20000; loop: true; easing: linear"></a-gltf-model>
+      </a-entity>
+
+      <a-entity position="5 0 -5">
+        <a-cylinder color="#FFD700" radius="0.4" height="1.5"></a-cylinder>
+        <a-sphere color="#FFF" radius="0.3" position="0 1.8 0" animation="property: position; to: 0 2.2 0; dir: alternate; dur: 2000; loop: true"></a-sphere>
+      </a-entity>
+
+      <a-entity position="-5 0 5">
+        <a-cylinder color="#FFD700" radius="0.4" height="1.5"></a-cylinder>
+        <a-cone color="#FFF" radius-bottom="0.3" height="0.5" position="0 1.8 0"></a-cone>
+      </a-entity>
+
+      <a-entity position="5 0 5">
+        <a-cylinder color="#FFD700" radius="0.4" height="1.5"></a-cylinder>
+        <a-torus color="#FFF" radius="0.2" radius-tubular="0.05" position="0 1.8 0" rotation="90 0 0"></a-torus>
+      </a-entity>
+      
+      <!-- Sky and Ambient Lighting -->
+      <a-sky color="#ECECEC"></a-sky>
+      <a-light type="ambient" color="#FFF" intensity="0.5"></a-light>
+    </a-scene>
+  </body>
+</html>
