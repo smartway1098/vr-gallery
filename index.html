@@ -6,43 +6,55 @@
     <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v7.5.0/dist/aframe-extras.min.js"></script>
     <script>
-       AFRAME.registerComponent('scene-click-handler', {
-         init: function () {
-           const hud = document.querySelector('#hud-board');
-           const phoenix = document.querySelector('[click-interactive]');
-           
-           // Click on Phoenix shows HUD
-           phoenix.addEventListener('click', (evt) => {
-             hud.setAttribute('visible', true);
-             this.justClickedPhoenix = true;
-             setTimeout(() => { this.justClickedPhoenix = false; }, 50);
-           });
-
-           // Click anywhere on the screen hides HUD
-           window.addEventListener('click', () => {
-             if (this.justClickedPhoenix) return;
-             if (hud.getAttribute('visible') === true) {
-               hud.setAttribute('visible', false);
-             }
-           });
-         }
-       });
+      AFRAME.registerComponent('scene-click-handler', {
+        init: function () {
+          const hud = document.querySelector('#hud-board');
+          
+          // Click anywhere on the screen hides HUD
+          window.addEventListener('click', () => {
+            if (this.justClickedItem) return;
+            if (hud.getAttribute('visible') === true) {
+              hud.setAttribute('visible', false);
+            }
+          });
+        }
+      });
 
       AFRAME.registerComponent('chinese-text-board', {
         init: function () {
-          const canvas = document.createElement('canvas');
-          canvas.width = 512;
-          canvas.height = 340;
-          const ctx = canvas.getContext('2d');
-          
-          // Transparent background (No fillRect)
+          this.canvas = document.createElement('canvas');
+          this.canvas.width = 512;
+          this.canvas.height = 340;
+          this.ctx = this.canvas.getContext('2d');
+          this.updateText('phoenix'); // Default/Initial text
+        },
+        updateText: function (item) {
+          const ctx = this.ctx;
+          const canvas = this.canvas;
           ctx.clearRect(0, 0, canvas.width, canvas.height);
+          
+          let title = '';
+          let desc = '';
+          
+          if (item === 'phoenix') {
+            title = '凤凰 (Phoenix)';
+            desc = '凤凰，中国神话中的百鸟之王。\n雄者为凤，雌者为凰。\n自古以来象征着吉祥和谐、\n至高无上的高贵，以及涅槃重生。';
+          } else if (item === 'sphere') {
+            title = '浮空球 (Sphere)';
+            desc = '完美对称的球体，自古被视为\n圆满与神圣的象征。\n在重力之外缓缓浮动，象征着\n物理规则的静谧与优雅。';
+          } else if (item === 'cone') {
+            title = '几何锥 (Cone)';
+            desc = '底部宽广而顶部尖锐的圆锥体。\n在几何美学中代表了向上凝聚的\n精神力量，与空间透视的极致美。';
+          } else if (item === 'torus') {
+            title = '旋转环 (Torus)';
+            desc = '圆润而饱满的圆环面体（Torus）。\n它象征着永无止境的循环与衔接，\n展示了现代三维图形几何的\n连续与圆滑之美。';
+          }
           
           // Title (Black text)
           ctx.fillStyle = '#000000';
           ctx.font = 'bold 36px "Microsoft YaHei", sans-serif';
           ctx.textAlign = 'center';
-          ctx.fillText('凤凰 (Phoenix)', canvas.width / 2, 50);
+          ctx.fillText(title, canvas.width / 2, 50);
           
           // Elegant separator line
           ctx.beginPath();
@@ -57,7 +69,6 @@
           ctx.font = 'bold 22px "Microsoft YaHei", sans-serif';
           ctx.textAlign = 'left';
           
-          const desc = '凤凰，中国神话中的百鸟之王。\n雄者为凤，雌者为凰。\n自古以来象征着吉祥和谐、\n至高无上的高贵，以及涅槃重生。';
           const lines = desc.split('\n');
           let y = 125;
           lines.forEach(line => {
@@ -70,6 +81,56 @@
             shader: 'flat',
             transparent: true,
             opacity: 1.0
+          });
+        }
+      });
+
+      AFRAME.registerComponent('simple-label-board', {
+        schema: {
+          text: {type: 'string', default: '作品'}
+        },
+        init: function () {
+          const canvas = document.createElement('canvas');
+          canvas.width = 256;
+          canvas.height = 128;
+          const ctx = canvas.getContext('2d');
+          
+          ctx.fillStyle = '#FFFFFF';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          
+          ctx.strokeStyle = '#FFD700';
+          ctx.lineWidth = 6;
+          ctx.strokeRect(3, 3, canvas.width - 6, canvas.height - 6);
+          
+          ctx.fillStyle = '#000000';
+          ctx.font = 'bold 24px "Microsoft YaHei", sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(this.data.text, canvas.width / 2, 75);
+          
+          this.el.setAttribute('material', {
+            src: canvas,
+            shader: 'flat'
+          });
+        }
+      });
+
+      AFRAME.registerComponent('click-interactive', {
+        schema: {
+          item: {type: 'string', default: 'phoenix'}
+        },
+        init: function () {
+          this.el.addEventListener('click', (evt) => {
+            const hud = document.querySelector('#hud-board');
+            const hudComponent = hud.components['chinese-text-board'];
+            
+            // Dynamic text update on HUD
+            hudComponent.updateText(this.data.item);
+            hud.setAttribute('visible', true);
+            
+            // Flag handling for global tap-off
+            const sceneHandler = document.querySelector('a-scene').components['scene-click-handler'];
+            sceneHandler.justClickedItem = true;
+            setTimeout(() => { sceneHandler.justClickedItem = false; }, 50);
           });
         }
       });
@@ -97,8 +158,8 @@
       </a-assets>
 
       <!-- Camera / VR Controller -->
-      <a-entity id="rig" movement-controls="controls: keyboard, gamepad, touch">
-        <a-entity camera position="0 1.6 0" look-controls wasd-controls="fly: false">
+      <a-entity id="rig" movement-controls="controls: keyboard, gamepad, touch; speed: 0.1">
+        <a-entity camera position="0 1.6 0" look-controls wasd-controls="fly: false; acceleration: 25">
           <a-cursor></a-cursor>
           <!-- HUD Info Board (Fixed to Camera Viewport, Transparent Background, Black Text) -->
           <a-plane id="hud-board" chinese-text-board width="0.4" height="0.3" position="-0.3 0.1 -0.5" visible="false"></a-plane>
@@ -140,24 +201,32 @@
       <a-box color="#ADD8E6" depth="0.1" height="2" width="2" position="6 3 9.9" opacity="0.6"></a-box>
 
       <!-- Pedestals (4 around the center) -->
+      <!-- Pedestal 1: Phoenix -->
       <a-entity position="-5 0 -5">
         <a-cylinder color="#FFD700" radius="0.4" height="1.5"></a-cylinder>
-        <a-gltf-model src="#phoenix" click-interactive position="0 0.75 0" scale="0.005 0.005 0.005" animation="property: rotation; to: 0 360 0; dur: 20000; loop: true; easing: linear"></a-gltf-model>
+        <a-gltf-model src="#phoenix" click-interactive="item: phoenix" position="0 0.75 0" scale="0.005 0.005 0.005" animation="property: rotation; to: 0 360 0; dur: 20000; loop: true; easing: linear"></a-gltf-model>
+        <a-plane simple-label-board="text: 凤凰 (Phoenix)" click-interactive="item: phoenix" width="1.0" height="0.5" position="0 0.3 0.9" rotation="-20 0 0"></a-plane>
       </a-entity>
 
+      <!-- Pedestal 2: Floating Sphere -->
       <a-entity position="5 0 -5">
         <a-cylinder color="#FFD700" radius="0.4" height="1.5"></a-cylinder>
-        <a-sphere color="#FFF" radius="0.3" position="0 1.8 0" animation="property: position; to: 0 2.2 0; dir: alternate; dur: 2000; loop: true"></a-sphere>
+        <a-sphere color="#FFF" click-interactive="item: sphere" radius="0.3" position="0 1.8 0" animation="property: position; to: 0 2.2 0; dir: alternate; dur: 2000; loop: true"></a-sphere>
+        <a-plane simple-label-board="text: 浮空球 (Sphere)" click-interactive="item: sphere" width="1.0" height="0.5" position="0 0.3 0.9" rotation="-20 0 0"></a-plane>
       </a-entity>
 
+      <!-- Pedestal 3: Cone -->
       <a-entity position="-5 0 5">
         <a-cylinder color="#FFD700" radius="0.4" height="1.5"></a-cylinder>
-        <a-cone color="#FFF" radius-bottom="0.3" height="0.5" position="0 1.8 0"></a-cone>
+        <a-cone color="#FFF" click-interactive="item: cone" radius-bottom="0.3" height="0.5" position="0 1.8 0"></a-cone>
+        <a-plane simple-label-board="text: 几何锥 (Cone)" click-interactive="item: cone" width="1.0" height="0.5" position="0 0.3 0.9" rotation="-20 0 0"></a-plane>
       </a-entity>
 
+      <!-- Pedestal 4: Torus -->
       <a-entity position="5 0 5">
         <a-cylinder color="#FFD700" radius="0.4" height="1.5"></a-cylinder>
-        <a-torus color="#FFF" radius="0.2" radius-tubular="0.05" position="0 1.8 0" rotation="90 0 0"></a-torus>
+        <a-torus color="#FFF" click-interactive="item: torus" radius="0.2" radius-tubular="0.05" position="0 1.8 0" rotation="90 0 0"></a-torus>
+        <a-plane simple-label-board="text: 旋转环 (Torus)" click-interactive="item: torus" width="1.0" height="0.5" position="0 0.3 0.9" rotation="-20 0 0"></a-plane>
       </a-entity>
       
       <!-- Sky and Ambient Lighting -->
