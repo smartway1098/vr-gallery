@@ -6,85 +6,70 @@
     <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v7.5.0/dist/aframe-extras.min.js"></script>
     <script>
+       AFRAME.registerComponent('scene-click-handler', {
+         init: function () {
+           const hud = document.querySelector('#hud-board');
+           const phoenix = document.querySelector('[click-interactive]');
+           
+           // Click on Phoenix shows HUD
+           phoenix.addEventListener('click', (evt) => {
+             hud.setAttribute('visible', true);
+             this.justClickedPhoenix = true;
+             setTimeout(() => { this.justClickedPhoenix = false; }, 50);
+           });
+
+           // Click anywhere on the screen hides HUD
+           window.addEventListener('click', () => {
+             if (this.justClickedPhoenix) return;
+             if (hud.getAttribute('visible') === true) {
+               hud.setAttribute('visible', false);
+             }
+           });
+         }
+       });
+
       AFRAME.registerComponent('chinese-text-board', {
-        schema: {
-          title: {type: 'string', default: '凤凰 (Phoenix)'},
-          desc: {type: 'string', default: '凤凰，中国神话中的百鸟之王。\n雄者为凤，雌者为凰。\n自古以来象征着吉祥和谐、\n至高无上的高贵，以及涅槃重生。'}
-        },
         init: function () {
           const canvas = document.createElement('canvas');
           canvas.width = 512;
           canvas.height = 340;
           const ctx = canvas.getContext('2d');
           
-          // White background
-          ctx.fillStyle = '#FFFFFF';
-          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          // Transparent background (No fillRect)
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
           
-          // Golden borders
-          ctx.strokeStyle = '#FFD700';
-          ctx.lineWidth = 12;
-          ctx.strokeRect(6, 6, canvas.width - 12, canvas.height - 12);
-          
-          // Inner thin border
-          ctx.strokeStyle = '#333333';
-          ctx.lineWidth = 2;
-          ctx.strokeRect(18, 18, canvas.width - 36, canvas.height - 36);
-
-          // Title
-          ctx.fillStyle = '#111111';
-          ctx.font = 'bold 32px "Microsoft YaHei", sans-serif';
+          // Title (Black text)
+          ctx.fillStyle = '#000000';
+          ctx.font = 'bold 36px "Microsoft YaHei", sans-serif';
           ctx.textAlign = 'center';
-          ctx.fillText(this.data.title, canvas.width / 2, 70);
+          ctx.fillText('凤凰 (Phoenix)', canvas.width / 2, 50);
           
-          // Separator line
+          // Elegant separator line
           ctx.beginPath();
-          ctx.moveTo(40, 95);
-          ctx.lineTo(canvas.width - 40, 95);
-          ctx.strokeStyle = '#FFD700';
-          ctx.lineWidth = 3;
+          ctx.moveTo(40, 75);
+          ctx.lineTo(canvas.width - 40, 75);
+          ctx.strokeStyle = '#000000';
+          ctx.lineWidth = 2;
           ctx.stroke();
           
-          // Description (multiline text support)
-          ctx.fillStyle = '#222222';
-          ctx.font = '20px "Microsoft YaHei", sans-serif';
+          // Description (Black text)
+          ctx.fillStyle = '#000000';
+          ctx.font = 'bold 22px "Microsoft YaHei", sans-serif';
           ctx.textAlign = 'left';
           
-          const lines = this.data.desc.split('\n');
-          let y = 145;
+          const desc = '凤凰，中国神话中的百鸟之王。\n雄者为凤，雌者为凰。\n自古以来象征着吉祥和谐、\n至高无上的高贵，以及涅槃重生。';
+          const lines = desc.split('\n');
+          let y = 125;
           lines.forEach(line => {
-            ctx.fillText(line, 45, y);
-            y += 36;
+            ctx.fillText(line, 40, y);
+            y += 42;
           });
           
-          // Interactive Hint
-          ctx.fillStyle = '#FF5555';
-          ctx.font = 'bold 16px sans-serif';
-          ctx.textAlign = 'center';
-          ctx.fillText('（点击说明牌 放大 / 缩小）', canvas.width / 2, canvas.height - 35);
-
-          // Render canvas to A-Frame material
           this.el.setAttribute('material', {
             src: canvas,
-            shader: 'flat'
-          });
-        }
-      });
-
-      AFRAME.registerComponent('click-interactive', {
-        init: function () {
-          this.el.addEventListener('click', () => {
-            const isZoomed = this.el.getAttribute('scale').x > 1.5;
-            this.el.setAttribute('animation', {
-              property: 'scale',
-              to: isZoomed ? '1 1 1' : '2.0 2.0 2.0',
-              dur: 800
-            });
-            this.el.setAttribute('animation__pos', {
-              property: 'position',
-              to: isZoomed ? '0 0.3 1.0' : '0 1.4 2.5',
-              dur: 800
-            });
+            shader: 'flat',
+            transparent: true,
+            opacity: 1.0
           });
         }
       });
@@ -104,7 +89,7 @@
   </head>
   <body>
     <div id="joystick-container"></div>
-    <a-scene cursor="rayOrigin: mouse" raycaster="objects: [click-interactive]">
+    <a-scene scene-click-handler cursor="rayOrigin: mouse" raycaster="objects: [click-interactive]">
       <!-- Assets -->
       <a-assets>
         <img id="floor" src="https://cdn.aframe.io/a-painter/images/floor.jpg">
@@ -115,6 +100,8 @@
       <a-entity id="rig" movement-controls="controls: keyboard, gamepad, touch">
         <a-entity camera position="0 1.6 0" look-controls wasd-controls="fly: false">
           <a-cursor></a-cursor>
+          <!-- HUD Info Board (Fixed to Camera Viewport, Transparent Background, Black Text) -->
+          <a-plane id="hud-board" chinese-text-board width="0.4" height="0.3" position="-0.3 0.1 -0.5" visible="false"></a-plane>
         </a-entity>
         <a-entity oculus-touch-controls="hand: left"></a-entity>
         <a-entity oculus-touch-controls="hand: right"></a-entity>
@@ -155,10 +142,7 @@
       <!-- Pedestals (4 around the center) -->
       <a-entity position="-5 0 -5">
         <a-cylinder color="#FFD700" radius="0.4" height="1.5"></a-cylinder>
-        <a-gltf-model src="#phoenix" position="0 0.75 0" scale="0.005 0.005 0.005" animation="property: rotation; to: 0 360 0; dur: 20000; loop: true; easing: linear"></a-gltf-model>
-        
-        <!-- Info Sign (Interactive Canvas Board) - Moved forward to prevent clipping -->
-        <a-plane id="phoenix-info" chinese-text-board click-interactive width="1.5" height="1.0" position="0 0.3 1.0" rotation="-20 0 0" class="clickable"></a-plane>
+        <a-gltf-model src="#phoenix" click-interactive position="0 0.75 0" scale="0.005 0.005 0.005" animation="property: rotation; to: 0 360 0; dur: 20000; loop: true; easing: linear"></a-gltf-model>
       </a-entity>
 
       <a-entity position="5 0 -5">
